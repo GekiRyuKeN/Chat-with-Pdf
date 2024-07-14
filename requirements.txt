@@ -2,4 +2,5 @@ spacy==3.0.7
 thinc==8.0.3
 numpy==1.22.2
 sentence-transformers==2.1.0
-scikit-learn==0.24.3
+scikit-learn
+
