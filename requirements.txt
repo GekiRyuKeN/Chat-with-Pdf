@@ -5,5 +5,5 @@ spacy
 matplotlib
 numpy
 pandas
-
+pypdf
 
