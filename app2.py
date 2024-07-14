@@ -3,28 +3,7 @@ import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import nltk
-from nltk.tokenize import sent_tokenize
-from PyPDF2 import PdfReader
-
-# Explicitly set NLTK data path
-nltk.data.path.append('DH.pdf')  # Assuming 'DH.pdf' is your NLTK data directory
-
-# Function to download NLTK data if not found
-def download_nltk_data():
-    import ssl
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        pass
-    else:
-        ssl._create_default_https_context = _create_unverified_https_context
-
-    nltk.download('punkt', download_dir='DH.pdf')  # Download NLTK data to 'DH.pdf'
-
-# Check if NLTK data is present
-if not nltk.data.find('tokenizers/punkt'):
-    download_nltk_data()
+import fitz  # PyMuPDF for PDF handling
 
 # Load models
 @st.cache(allow_output_mutation=True)
@@ -128,12 +107,13 @@ def set_custom_style():
     </style>
     """, unsafe_allow_html=True)
 
-# Function to extract text from PDF
+# Function to extract text from PDF using PyMuPDF (fitz)
 def extract_text_from_pdf(file):
-    pdf_reader = PdfReader(file)
+    doc = fitz.open(file)
     text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        text += page.get_text()
     return text
 
 # Text preprocessing
@@ -141,9 +121,10 @@ def preprocess_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
 
-# Split text into sentences
+# Split text into sentences using gensim
 def split_into_sentences(text):
-    return sent_tokenize(text)
+    from gensim.summarization.textcleaner import split_sentences
+    return split_sentences(text)
 
 # Split text into chunks
 def split_into_chunks(text, chunk_size=1000, overlap=100):
@@ -207,5 +188,5 @@ def main():
 
     st.markdown("<div class='footer'>Powered by Diamante Net</div>", unsafe_allow_html=True)
 
-if __name__== "__main__":
+if __name__ == "__main__":
     main()
