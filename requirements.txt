@@ -1,7 +1,7 @@
 streamlit==1.15.0
 pypdf2==1.26.0
 regex
-numpy==1.21.5
+numpy
 sentence-transformers==2.1.0
 scikit-learn
 spacy==3.2.1
