@@ -5,4 +5,4 @@ numpy
 sentence-transformers==2.1.0
 scikit-learn
 spacy==3.2.1
-thinc==8.0.10
+thinc>=8.0.12,<8.1.0
