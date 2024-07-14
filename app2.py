@@ -1,15 +1,13 @@
 import streamlit as st
-import pypdf
+import fitz  # PyMuPDF
 import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
-import thinc
-import numpy
 
 # Load models
-@st.cache_resource
+@st.cache(allow_output_mutation=True)
 def load_models():
     sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
     nlp = spacy.load("en_core_web_sm")
@@ -110,13 +108,14 @@ def set_custom_style():
     }
     </style>
     """, unsafe_allow_html=True)
-    
+
 # Function to extract text from PDF
 def extract_text_from_pdf(file):
-    pdf_reader = pypdf.PdfReader(file)
     text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
+    doc = fitz.open(file)
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
+        text += page.get_text()
     return text
 
 # Text preprocessing
@@ -137,10 +136,10 @@ def split_into_chunks(text, chunk_size=1000, overlap=100):
 def find_most_relevant_chunks(question, chunks, top_k=3):
     question_embedding = sentence_model.encode([question])
     chunk_embeddings = sentence_model.encode(chunks)
-    
+
     similarities = cosine_similarity(question_embedding, chunk_embeddings)[0]
     top_indices = similarities.argsort()[-top_k:][::-1]
-    
+
     return [chunks[i] for i in top_indices]
 
 # Classify question type
@@ -165,21 +164,21 @@ def answer_question(question, text):
     chunks = split_into_chunks(text)
     relevant_chunks = find_most_relevant_chunks(question, chunks)
     combined_chunk = " ".join(relevant_chunks)
-    
+
     question_type = classify_question(question)
-    
+
     if question_type != "GENERAL":
         entities = extract_entities(combined_chunk, question_type)
         if entities:
             return f"Based on the content, the answer might be related to: {', '.join(entities)}"
-    
+
     sentences = re.split(r'(?<=[.!?])\s+', combined_chunk)
     sentence_embeddings = sentence_model.encode(sentences)
     question_embedding = sentence_model.encode([question])
-    
+
     similarities = cosine_similarity(question_embedding, sentence_embeddings)[0]
     top_sentences_indices = similarities.argsort()[-3:][::-1]
-    
+
     answer = ' '.join([sentences[i] for i in top_sentences_indices])
     return answer if answer else "I couldn't find a relevant answer. Could you rephrase your question?"
 
