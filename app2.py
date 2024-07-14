@@ -7,9 +7,24 @@ import nltk
 from nltk.tokenize import sent_tokenize
 from PyPDF2 import PdfReader
 
-# Check and download NLTK data
+# Explicitly set NLTK data path
+nltk.data.path.append('DH.pdf')  # Replace with the actual path to your NLTK data directory
+
+# Function to download NLTK data if not found
+def download_nltk_data():
+    import ssl
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        pass
+    else:
+        ssl._create_default_https_context = _create_unverified_https_context
+
+    nltk.download('punkt', download_dir='/path/to/nltk_data')  # Replace with the actual path to your NLTK data directory
+
+# Check if NLTK data is present
 if not nltk.data.find('tokenizers/punkt'):
-    nltk.download('punkt')
+    download_nltk_data()
 
 # Load models
 @st.cache(allow_output_mutation=True)
