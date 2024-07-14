@@ -3,55 +3,19 @@ import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import PyPDF2
-import nltk
-from nltk.tokenize import sent_tokenize
+from PyPDF2 import PdfReader
+import gensim
+from gensim.summarization.textcleaner import split_sentences
 
-# Function to extract text from PDF using PyPDF2
-def extract_text_from_pdf(file):
-    pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-    for page in range(len(pdf_reader.pages)):
-        text += pdf_reader.pages[page].extract_text()
-    return text
-
-# Function to preprocess text
-def preprocess_text(text):
-    text = re.sub(r'\s+', ' ', text)  # Remove extra whitespaces
-    return text.strip()
-
-# Function to split text into sentences using NLTK
-def split_into_sentences(text):
-    return sent_tokenize(text)
-
-# Load models
+# Load SentenceTransformer model
 @st.cache(allow_output_mutation=True)
 def load_models():
     sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
     return sentence_model
 
-# Answer question function
-def answer_question(question, text):
-    sentences = split_into_sentences(text)
-    sentence_model = load_models()
-    question_embedding = sentence_model.encode([question])
-    sentence_embeddings = sentence_model.encode(sentences)
-    
-    similarities = cosine_similarity(question_embedding, sentence_embeddings)[0]
-    top_sentence_indices = similarities.argsort()[-3:][::-1]
-    
-    top_sentences = [sentences[i] for i in top_sentence_indices]
-    return ' '.join(top_sentences)
+sentence_model = load_models()
 
-# Diamante Net Hackathon specific content
-diamante_info = """
-Diamante Net Hackathon is an exciting event that brings together innovative minds to tackle challenges in the blockchain and cryptocurrency space. 
-The hackathon focuses on developing solutions using the Diamante blockchain technology.
-Key areas of interest include DeFi, NFTs, and cross-chain interoperability.
-The event offers substantial prizes for the winning teams and networking opportunities with industry leaders.
-Participants will have access to mentorship from blockchain experts throughout the hackathon.
-"""
-
+# Inline CSS styles
 def set_custom_style():
     st.markdown("""
     <style>
@@ -145,6 +109,47 @@ def set_custom_style():
     </style>
     """, unsafe_allow_html=True)
 
+# Function to extract text from PDF
+def extract_text_from_pdf(file):
+    pdf_reader = PdfReader(file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+
+# Function to preprocess text
+def preprocess_text(text):
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
+
+# Alternative sentence tokenization
+def split_into_sentences(text):
+    sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s', text)
+    return sentences
+
+# Function to find most relevant chunks
+def find_most_relevant_chunks(question, chunks, top_k=3):
+    question_embedding = sentence_model.encode([question])
+    chunk_embeddings = sentence_model.encode(chunks)
+    
+    similarities = cosine_similarity(question_embedding, chunk_embeddings)[0]
+    top_indices = similarities.argsort()[-top_k:][::-1]
+    
+    return [chunks[i] for i in top_indices]
+
+# Function to answer question
+def answer_question(question, text):
+    sentences = split_into_sentences(text)
+    question_embedding = sentence_model.encode([question])
+    sentence_embeddings = sentence_model.encode(sentences)
+    
+    similarities = cosine_similarity(question_embedding, sentence_embeddings)[0]
+    top_sentence_indices = similarities.argsort()[-3:][::-1]
+    
+    top_sentences = [sentences[i] for i in top_sentence_indices]
+    return ' '.join(top_sentences)
+
+# Main function to run the Streamlit app
 def main():
     set_custom_style()
 
@@ -155,14 +160,13 @@ def main():
 
     if uploaded_file is not None:
         text = extract_text_from_pdf(uploaded_file)
-        full_text = diamante_info + " " + text
     else:
-        full_text = diamante_info
+        text = ""
 
     st.markdown("<h2 class='section-header'>Ask me anything about the Hackathon!</h2>", unsafe_allow_html=True)
     query = st.text_input("Your question:")
     if query:
-        answer = answer_question(query, full_text)
+        answer = answer_question(query, text)
         st.markdown(f"<div class='answer'><strong>Answer:</strong> {answer}</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='footer'>Powered by Diamante Net</div>", unsafe_allow_html=True)
