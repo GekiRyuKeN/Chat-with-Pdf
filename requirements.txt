@@ -6,4 +6,3 @@ sentence-transformers
 scikit-learn
 spacy
 thinc
-cupy
