@@ -20,7 +20,7 @@ def download_nltk_data():
     else:
         ssl._create_default_https_context = _create_unverified_https_context
 
-    nltk.download('punkt', download_dir='/path/to/nltk_data')  # Replace with the actual path to your NLTK data directory
+    nltk.download('punkt', download_dir='DH.pdf')  # Replace with the actual path to your NLTK data directory
 
 # Check if NLTK data is present
 if not nltk.data.find('tokenizers/punkt'):
