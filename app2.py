@@ -1,12 +1,11 @@
 import streamlit as st
-import pypdf
 import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
 from nltk.tokenize import sent_tokenize
-import PyPDF2
+from PyPDF2 import PdfReader
 
 # Load models
 @st.cache(allow_output_mutation=True)
@@ -112,10 +111,9 @@ def set_custom_style():
 
 # Function to extract text from PDF
 def extract_text_from_pdf(file):
-    pdf_reader = PyPDF2.PdfFileReader(file)
+    pdf_reader = PdfReader(file)
     text = ""
-    for page_num in range(pdf_reader.numPages):
-        page = pdf_reader.getPage(page_num)
+    for page in pdf_reader.pages:
         text += page.extract_text()
     return text
 
