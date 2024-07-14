@@ -1,19 +1,28 @@
 import streamlit as st
-import fitz  # PyMuPDF
+import pypdf
 import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import spacy
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk import ne_chunk, pos_tag, word_tokenize
+from nltk.tree import Tree
+
+# Download NLTK resources
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('maxent_ne_chunker')
+nltk.download('words')
 
 # Load models
 @st.cache(allow_output_mutation=True)
 def load_models():
     sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
-    nlp = spacy.load("en_core_web_sm")
-    return sentence_model, nlp
+    return sentence_model
 
-sentence_model, nlp = load_models()
+sentence_model = load_models()
 
 # Inline CSS
 def set_custom_style():
@@ -111,11 +120,10 @@ def set_custom_style():
 
 # Function to extract text from PDF
 def extract_text_from_pdf(file):
+    pdf_reader = pypdf.PdfReader(file)
     text = ""
-    doc = fitz.open(file)
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        text += page.get_text()
+    for page in pdf_reader.pages:
+        text += page.extract_text()
     return text
 
 # Text preprocessing
@@ -136,23 +144,19 @@ def split_into_chunks(text, chunk_size=1000, overlap=100):
 def find_most_relevant_chunks(question, chunks, top_k=3):
     question_embedding = sentence_model.encode([question])
     chunk_embeddings = sentence_model.encode(chunks)
-
+    
     similarities = cosine_similarity(question_embedding, chunk_embeddings)[0]
     top_indices = similarities.argsort()[-top_k:][::-1]
-
+    
     return [chunks[i] for i in top_indices]
 
 # Classify question type
 def classify_question(question):
-    doc = nlp(question.lower())
-    if any(token.text in ["who", "whom"] for token in doc):
-        return "PERSON"
-    elif any(token.text in ["where", "location"] for token in doc):
-        return "LOCATION"
-    elif any(token.text in ["when", "date", "time"] for token in doc):
-        return "DATE"
-    else:
-        return "GENERAL"
+    words = word_tokenize(question.lower())
+    stop_words = set(stopwords.words('english'))
+    filtered_words = [word for word in words if word.lower() not in stop_words]
+    entities = ne_chunk(pos_tag(filtered_words))
+    return entities
 
 # Extract entities from text
 def extract_entities(text, entity_type):
@@ -164,21 +168,21 @@ def answer_question(question, text):
     chunks = split_into_chunks(text)
     relevant_chunks = find_most_relevant_chunks(question, chunks)
     combined_chunk = " ".join(relevant_chunks)
-
+    
     question_type = classify_question(question)
-
+    
     if question_type != "GENERAL":
         entities = extract_entities(combined_chunk, question_type)
         if entities:
             return f"Based on the content, the answer might be related to: {', '.join(entities)}"
-
+    
     sentences = re.split(r'(?<=[.!?])\s+', combined_chunk)
     sentence_embeddings = sentence_model.encode(sentences)
     question_embedding = sentence_model.encode([question])
-
+    
     similarities = cosine_similarity(question_embedding, sentence_embeddings)[0]
     top_sentences_indices = similarities.argsort()[-3:][::-1]
-
+    
     answer = ' '.join([sentences[i] for i in top_sentences_indices])
     return answer if answer else "I couldn't find a relevant answer. Could you rephrase your question?"
 
