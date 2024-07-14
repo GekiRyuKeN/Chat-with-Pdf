@@ -1,6 +1,9 @@
-spacy==3.0.7
-thinc==8.0.3
-numpy==1.22.2
-sentence-transformers==2.1.0
+streamlit
+sentence-transformers
 scikit-learn
+spacy
+matplotlib
+numpy
+pandas
+
 
