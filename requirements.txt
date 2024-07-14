@@ -1,12 +1,6 @@
 streamlit
 sentence-transformers
 scikit-learn
-spacy
-matplotlib
 numpy
-pandas
-pypdf
-PyMuPDF
-nltk
 PyPDF2
 gensim
