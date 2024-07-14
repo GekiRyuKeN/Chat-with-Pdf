@@ -9,3 +9,4 @@ pypdf
 PyMuPDF
 nltk
 PyPDF2
+gensim
