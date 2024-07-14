@@ -8,11 +8,6 @@ import spacy
 import thinc
 import numpy
 
-# Check versions for compatibility
-st.write(f"numpy version: {numpy.__version__}")
-st.write(f"spacy version: {spacy.__version__}")
-st.write(f"thinc version: {thinc.__version__}")
-
 # Load models
 @st.cache_resource
 def load_models():
