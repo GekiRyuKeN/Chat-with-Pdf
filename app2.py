@@ -7,6 +7,10 @@ import nltk
 from nltk.tokenize import sent_tokenize
 from PyPDF2 import PdfReader
 
+# Check and download NLTK data
+if not nltk.data.find('tokenizers/punkt'):
+    nltk.download('punkt')
+
 # Load models
 @st.cache(allow_output_mutation=True)
 def load_models():
