@@ -1,7 +1,8 @@
 streamlit
+pypdf
+regex
+numpy
 sentence-transformers
 scikit-learn
-numpy
-PyPDF2
-gensim
-scipy
+spacy
+thinc
