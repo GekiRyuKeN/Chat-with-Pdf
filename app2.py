@@ -5,16 +5,8 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import nltk
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.corpus import stopwords
-from nltk import ne_chunk, pos_tag, word_tokenize
-from nltk.tree import Tree
-
-# Download NLTK resources
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('maxent_ne_chunker')
-nltk.download('words')
+from nltk.tokenize import sent_tokenize
+import PyPDF2
 
 # Load models
 @st.cache(allow_output_mutation=True)
@@ -120,9 +112,10 @@ def set_custom_style():
 
 # Function to extract text from PDF
 def extract_text_from_pdf(file):
-    pdf_reader = pypdf.PdfReader(file)
+    pdf_reader = PyPDF2.PdfFileReader(file)
     text = ""
-    for page in pdf_reader.pages:
+    for page_num in range(pdf_reader.numPages):
+        page = pdf_reader.getPage(page_num)
         text += page.extract_text()
     return text
 
@@ -130,6 +123,10 @@ def extract_text_from_pdf(file):
 def preprocess_text(text):
     text = re.sub(r'\s+', ' ', text)
     return text.strip()
+
+# Split text into sentences
+def split_into_sentences(text):
+    return sent_tokenize(text)
 
 # Split text into chunks
 def split_into_chunks(text, chunk_size=1000, overlap=100):
@@ -150,41 +147,17 @@ def find_most_relevant_chunks(question, chunks, top_k=3):
     
     return [chunks[i] for i in top_indices]
 
-# Classify question type
-def classify_question(question):
-    words = word_tokenize(question.lower())
-    stop_words = set(stopwords.words('english'))
-    filtered_words = [word for word in words if word.lower() not in stop_words]
-    entities = ne_chunk(pos_tag(filtered_words))
-    return entities
-
-# Extract entities from text
-def extract_entities(text, entity_type):
-    doc = nlp(text)
-    return [ent.text for ent in doc.ents if ent.label_ == entity_type]
-
 # Answer question
 def answer_question(question, text):
-    chunks = split_into_chunks(text)
-    relevant_chunks = find_most_relevant_chunks(question, chunks)
-    combined_chunk = " ".join(relevant_chunks)
-    
-    question_type = classify_question(question)
-    
-    if question_type != "GENERAL":
-        entities = extract_entities(combined_chunk, question_type)
-        if entities:
-            return f"Based on the content, the answer might be related to: {', '.join(entities)}"
-    
-    sentences = re.split(r'(?<=[.!?])\s+', combined_chunk)
-    sentence_embeddings = sentence_model.encode(sentences)
+    sentences = split_into_sentences(text)
     question_embedding = sentence_model.encode([question])
+    sentence_embeddings = sentence_model.encode(sentences)
     
     similarities = cosine_similarity(question_embedding, sentence_embeddings)[0]
-    top_sentences_indices = similarities.argsort()[-3:][::-1]
+    top_sentence_indices = similarities.argsort()[-3:][::-1]
     
-    answer = ' '.join([sentences[i] for i in top_sentences_indices])
-    return answer if answer else "I couldn't find a relevant answer. Could you rephrase your question?"
+    top_sentences = [sentences[i] for i in top_sentence_indices]
+    return ' '.join(top_sentences)
 
 # Diamante Net Hackathon specific content
 diamante_info = """
