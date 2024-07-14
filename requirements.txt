@@ -1,6 +1,6 @@
 streamlit==1.15.0
 pypdf2==1.26.0
-regex==2023.7.2
+regex
 numpy==1.21.5
 sentence-transformers==2.1.0
 scikit-learn
