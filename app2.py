@@ -4,13 +4,11 @@ import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-
-# Check versions for compatibility
-import numpy
 import spacy
 import thinc
+import numpy
 
-# Log the versions to help with debugging
+# Check versions for compatibility
 st.write(f"numpy version: {numpy.__version__}")
 st.write(f"spacy version: {spacy.__version__}")
 st.write(f"thinc version: {thinc.__version__}")
