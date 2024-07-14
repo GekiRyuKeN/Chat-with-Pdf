@@ -5,3 +5,4 @@ sentence_transformers==3.0.1
 spacy==3.7.5
 streamlit==1.36.0
 thinc
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.0.0/en_core_web_sm-3.0.0.tar.gz
